@@ -2,22 +2,22 @@ const Apify = require('apify');
 const { log } = Apify.utils;
 
 const {
+  enqueueSubcategories,
   extractSubcatPage,
-  extractProductPage,
+  enqueueNextPages,
+  extractProductPage
 } = require('./extractors');
 
 const {
   checkAndEval,
-  checkAndCreateUrlSource,
   setUpProxy,
+  checkAndCreateUrlSource,
   maxItemsCheck,
-  enqueueNextPages,
-  enqueueAllSupportedCategories,
   applyFunction
 } = require('./utils');
 
 // constants
-// const BASE_URL = 'https://www.forever21.com';
+const BASE_URL = 'https://www.forever21.com';
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -27,6 +27,7 @@ Apify.main(async () => {
   const input = await Apify.getValue('INPUT');
   if (!input) throw new Error('INPUT is missing.');
   if (!input.startUrls) throw new Error('INPUT "startUrls" property is required');
+  // check if startUrls è lista di oggetti. { url: ''}
   // defaults
   if (!input.proxyConfiguration) input.proxyConfiguration = { country: 'US' };
 
@@ -71,12 +72,8 @@ Apify.main(async () => {
     ////////////////////////////////////////////////////////////////////////////
 
     handlePageFunction: async ({ request, body, $ }) => {
-      // check items limit
-      const limitReached = await maxItemsCheck(maxItems, dataset, requestQueue);
-      if (limitReached) {
-        log.info(`Actor reached the max items limit. Crawler is going to halt...`);
-        process.exit();
-      }
+      // if exists, check items limit. If limit is reached crawler will exit.
+      if (maxItems) await maxItemsCheck(maxItems, dataset, requestQueue);
 
       log.info('Processing:', request.url);
       const { label } = request.userData;
@@ -84,10 +81,17 @@ Apify.main(async () => {
       //
 
       if (label === 'HOMEPAGE') {
-        const totalEnqueued = await enqueueAllSupportedCategories($, requestQueue);
+        const totalEnqueued = await enqueueSubcategories($, requestQueue);
 
-        log.info(`Enqueued ${totalEnqueued} categories from the homepage.`);
+        log.info(`Enqueued ${totalEnqueued} subcategories from the homepage.`);
       } // fine HOMEPAGE
+
+      if (label === 'MAINCAT') {
+        const cat = request.url.replace(BASE_URL, '');
+        const totalEnqueued = await enqueueSubcategories($, requestQueue, cat);
+
+        log.info(`Enqueued ${totalEnqueued} subcategories from ${request.url}`);
+      }
 
       if (label === 'SUBCAT') {
         const { urls, totalPages } = await extractSubcatPage($);

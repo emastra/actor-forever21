@@ -18,7 +18,7 @@ Forever21 Scraper is an [Apify actor](https://apify.com/actors) for extracting p
 
 **Notes on the input**
 - Each category has a few special sub-category (not containing any products) which will not be crawled and scraped. If this kind of URLs are included in the `startUrls`, the actor prints a warning on start up.
-- When `maxItems` is set, the total results may be slightly greater. This is because the actor waits for pending requests to complete and because each product on the website may produce more than one item (based on color variants).
+- When `maxItems` is set, the total results may be slightly greater. This is because the actor waits for pending requests to complete and because each product on the website may produce more than one item (derived from every color variants of the products).
 
 INPUT Example:
 

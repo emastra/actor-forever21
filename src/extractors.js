@@ -2,28 +2,61 @@ const Apify = require('apify');
 const { log } = Apify.utils;
 const cheerio = require('cheerio');
 
+async function enqueueSubcategories($, requestQueue, cat = null) {
+  const BASE_URL = 'https://www.forever21.com';
+
+  let menuCats = $('div.d_new_mega_menu').toArray();
+  let totalEnqueued = 0;
+
+  // if this function is used to extract subcategories from single main cat,
+  // keep only the single relevant div
+  if (cat) {
+    menuCats = menuCats.filter(menuDiv => $(menuDiv).children().first().attr('href') === cat);
+  }
+
+  for (const menuDiv of menuCats) {
+    const hrefs = $(menuDiv).find('a').toArray().map(a => a.attribs.href);
+
+    // filter out unsupported categories
+    const supportedHrefs = hrefs.filter(href => {
+      if (/-main|_main/.test(href)) return false;
+      if (!href.includes('catalog/category/')) return false;
+
+      return true;
+    });
+
+    totalEnqueued += supportedHrefs.length;
+    // console.log('supportedHrefs', supportedHrefs);
+
+    for (const href of supportedHrefs) {
+      await requestQueue.addRequest({
+        url: BASE_URL + href,
+        userData: { label: 'SUBCAT'}
+      });
+    }
+
+  }
+
+  if (cat) {
+    log.info(`Added all subcategories from main category ${cat}.`);
+  } else {
+    log.info(`Added all subcategories from all main categories of the home page.`);
+  }
+
+  return totalEnqueued;
+}
 
 async function extractSubcatPage($) {
-  /*
-    const scriptContent = $('script:contains("var cData")').html();
-    const start = scriptContent.indexOf('var cData = ');
-    const end = scriptContent.indexOf('console.log(cData);');
-    const dataString = scriptContent.substring(start, end);
-    const dataC = JSON.parse(dataString.replace('var cData = ', '').substring(0, dataString.indexOf('};')).trim().slice(0, -1));
-  */
   const scriptContent = $('script:contains("var cData")').html();
-  // const dataString = scriptContent.substring(scriptContent.indexOf('var cData = '), scriptContent.indexOf('console.log(cData);\n'));
   const start = scriptContent.indexOf('var cData = ');
   const end = scriptContent.indexOf('console.log(cData);');
-  // console.log('start-end', start, end);
   const dataString = scriptContent.substring(start, end);
-  // console.log('dataString', dataString);
 
   const cData = JSON.parse(dataString.replace('var cData = ', '').substring(0, dataString.indexOf('};')).trim().slice(0, -1));
   const catalogProducts = cData.CatalogProducts;
   const totalRecords = cData.TotalRecords;
   if (!catalogProducts || !totalRecords) {
-    console.log(cData);
+    // console.log(cData);
     throw new Error('Missing critical data source');
   }
   log.info('length of catalogProducts: ' + catalogProducts.length + '. TotalRecords: ' + totalRecords);
@@ -32,6 +65,22 @@ async function extractSubcatPage($) {
   const totalPages = Math.ceil(totalRecords / 120);
 
   return { urls, totalPages };
+}
+
+async function enqueueNextPages(request, requestQueue, totalPages) {
+  const currentBaseUrl = request.url.split('#')[0];
+
+  // add all successive pages for this subcat
+  for (let i = 2; i <= totalPages; i++) {
+    const info = await requestQueue.addRequest({
+      url: `${currentBaseUrl}#pageno=${i}`,
+      keepUrlFragment: true,
+      userData: { label: 'SUBCAT'}
+    });
+
+    log.info('Added', info.request.url);
+  }
+
 }
 
 async function extractProductPage($, request) {
@@ -94,6 +143,8 @@ async function extractProductPage($, request) {
 }
 
 module.exports = {
+  enqueueSubcategories,
   extractSubcatPage,
+  enqueueNextPages,
   extractProductPage
 }

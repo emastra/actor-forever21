@@ -17,34 +17,6 @@ function checkAndEval(extendOutputFunction) {
   return evaledExtendOutputFunction;
 }
 
-function checkAndCreateUrlSource(startUrls) {
-  const sources = [];
-
-  for (const url of startUrls) {
-    // if url is the homepage
-    if (url === 'https://www.forever21.com') {
-      sources.push({ url, userData: { label: 'HOMEPAGE' } });
-    }
-    else if (/-main|_main/.test(url)) { // check QUI, forse devo creare regexp object!!
-      log.warning(`The following url has not been added to the queue: ${url}.\nPlease choose a url from the sub-menu of the category. For more information, have a look at the actor documentation under "INPUT guidelines".`);
-    }
-    // if it's a category page
-    else if (url.includes('catalog/category/')) {
-      sources.push({ url, userData: { label: 'SUBCAT' } });
-    }
-    // if it's a product page
-    else if (/[0-9]{8,12}$/.test(url)) {
-      sources.push({ url, userData: { label: 'PRODUCT' } });
-    }
-    else {
-      // manage error here
-      log.warning(`The following url has not been added to the queue: ${url}.\nIt may be due to incorrect format or unsupported url. For more information, have a look at the actor documentation under "INPUT guidelines".`);
-    }
-  }
-
-  return sources;
-}
-
 function setUpProxy(proxyConfiguration) {
   const { customProxyUrls } = proxyConfiguration;
 
@@ -66,67 +38,45 @@ function setUpProxy(proxyConfiguration) {
   }
 }
 
-async function maxItemsCheck(maxItems, dataset, requestQueue) {
-  if (maxItems) {
-    const { itemCount } = await dataset.getInfo();
+function checkAndCreateUrlSource(startUrls) {
+  const sources = [];
 
-    // if (itemCount >= maxItems) {
-    //   await requestQueue.drop();
-    //   return true;
-    // }
-    return itemCount >= maxItems
-  }
-}
-
-async function enqueueNextPages(request, requestQueue, totalPages) {
-  const currentBaseUrl = request.url.split('#')[0];
-
-  // add all successive pages for this subcat
-  for (let i = 2; i <= totalPages; i++) {
-    const info = await requestQueue.addRequest({
-      url: `${currentBaseUrl}#pageno=${i}`,
-      keepUrlFragment: true,
-      userData: { label: 'SUBCAT'}
-    });
-
-    log.info('Added', info.request.url);
-  }
-
-}
-
-async function enqueueAllSupportedCategories($, requestQueue) {
-  const BASE_URL = 'https://www.forever21.com';
-
-  const menuCats = $('div.d_new_mega_menu').toArray();
-  let totalEnqueued = 0;
-
-  for (const menuDiv of menuCats) {
-    // const hrefs = $(menuDiv).find('a').toArray().map(a => $(a).attr('href'));
-    // const hrefs = $(menuDiv).find('a').toArray();
-    const hrefs = $(menuDiv).find('a').toArray().map(a => a.attribs.href);
-
-    // filter out unsupported categories
-    const supportedHrefs = hrefs.filter(href => {
-      if (/-main|_main/.test(href)) return false;
-      if (!href.includes('catalog/category/')) return false;
-
-      return true;
-    });
-
-    totalEnqueued += supportedHrefs.length;
-    console.log('supportedHrefs', supportedHrefs);
-
-    for (const href of supportedHrefs) {
-      await requestQueue.addRequest({
-        url: BASE_URL + href,
-        userData: { label: 'SUBCAT'}
-      });
-
-      log.info('From homepage, added subcategory:', href);
+  for (const url of startUrls) {
+    // if url is the homepage
+    if (url === 'https://www.forever21.com') {
+      sources.push({ url, userData: { label: 'HOMEPAGE' } });
+    }
+    else if (/-main|_main/.test(url)) {
+      // log.warning(`The following url has not been added to the queue: ${url}.\nPlease choose a url from the sub-menu of the category. For more information, have a look at the actor documentation under "INPUT guidelines".`);
+      sources.push({ url, userData: { label: 'MAINCAT' } });
+    }
+    // if it's a category page
+    else if (url.includes('catalog/category/')) {
+      sources.push({ url, userData: { label: 'SUBCAT' } });
+    }
+    // if it's a product page
+    else if (/[0-9]{8,12}$/.test(url)) {
+      sources.push({ url, userData: { label: 'PRODUCT' } });
+    }
+    else {
+      // manage error here
+      log.warning(`The following url has not been added to the queue: ${url}.\nIt may be due to incorrect format or unsupported url. For more information, have a look at the actor documentation under "INPUT guidelines".`);
     }
   }
 
-  return totalEnqueued;
+  return sources;
+}
+
+async function maxItemsCheck(maxItems, dataset, requestQueue) {
+  const { itemCount } = await dataset.getInfo();
+
+  if (itemCount >= maxItems) {
+    log.info(`Actor reached the max items limit. Crawler is going to halt...`);
+    log.info('Crawler Finished.');
+    process.exit();
+  }
+
+  // return itemCount >= maxItems
 }
 
 async function applyFunction($, evaledExtendOutputFunction, items) {
@@ -153,10 +103,8 @@ async function applyFunction($, evaledExtendOutputFunction, items) {
 
 module.exports = {
   checkAndEval,
-  checkAndCreateUrlSource,
   setUpProxy,
+  checkAndCreateUrlSource,
   maxItemsCheck,
-  enqueueNextPages,
-  enqueueAllSupportedCategories,
   applyFunction,
 }
