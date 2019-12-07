@@ -20,6 +20,24 @@ Forever21 Scraper is an [Apify actor](https://apify.com/actors) for extracting p
 - Each category has a few special sub-category (not containing any products) which will not be crawled and scraped. If this kind of URLs are included in the `startUrls`, the actor prints a warning on start up.
 - When `maxItems` is set, the total results may be slightly greater. This is because the actor waits for pending requests to be complete and because each product on the website may produce more than one item (based on color variants).
 
+INPUT Example:
+
+```
+{
+  "startUrls": [
+    "https://www.forever21.com/us/shop/catalog/category/f21/women-main",
+    "https://www.forever21.com/us/shop/catalog/category/plus/plus_size-activewear",
+    "https://www.forever21.com/us/shop/catalog/category/21men/mens-sweaters",
+    "https://www.forever21.com/us/shop/catalog/product/girls/girls_main/2000386827"
+  ],
+  "maxItems": 1000,
+  "extendOutputFunction": "($) => { return { test: 1234, test2: 5678 } }",
+  "proxyConfiguration": {
+    "country": "US"
+  }
+}
+```
+
 ### Output
 
 Output is stored in a dataset. Each item is information about one product. A single product on the website produces an item for each color variant.
@@ -65,11 +83,11 @@ Example of one output item:
 ```
 
 ### Compute units consumption
+The actor uses [CheerioCrawler](https://sdk.apify.com/docs/api/cheeriocrawler) which has low consumption.
+
+With 4096MB of RAM set for the actor, the average compute units per **1000** scraped pages is **0.3207**.
+
 Keep in mind that it is much more efficient to run one longer scrape (at least one minute) than more shorter ones because of the startup time.
-
-The actor uses [CheerioCrawler](https://sdk.apify.com/docs/api/cheeriocrawler) which has a the lowest CU consumption.
-
-Average compute units per **1000** scraped pages: **0.3207**
 
 ### Extend output function
 
