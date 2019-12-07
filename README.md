@@ -9,16 +9,16 @@ Forever21 Scraper is an [Apify actor](https://apify.com/actors) for extracting p
 
 ### Input
 
-| Field | Type | Description | Default value
-| ----- | ---- | ----------- | -------------|
-| startUrls | array | List of [Request](https://sdk.apify.com/docs/api/request#docsNav) objects that will be deeply crawled. The URLs can be the home page `https://www.forever21.com` or the top-level categories, the sub-categories and product page URLs | `[{ "url": "https://www.forever21.com" }]`|
-| maxItems | number | Maximum number of product items to be scraped | all found |
-| extendOutputFunction | string | Function that takes a JQuery handle ($) as argument and returns data that will be merged with the default output. More information in [Extend output function](#extend-output-function) | |
-| proxyConfiguration | object | Proxy settings of the run. If you have access to Apify proxy, leave the default settings. If not, you can set `{ "useApifyProxy": false" }` to disable proxy usage | `{ "useApifyProxy": true }`|
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| startUrls | array | (required) List of [Request](https://sdk.apify.com/docs/api/request#docsNav) objects that will be deeply crawled. The URLs can be the home page `https://www.forever21.com` or the top-level categories, the sub-categories and product page URLs |
+| maxItems | number | (optional) Maximum number of product items to be scraped |
+| extendOutputFunction | string | (optional) Function that takes a JQuery handle ($) as argument and returns data that will be merged with the default output. More information in [Extend output function](#extend-output-function) |
+| proxyConfiguration | object | (optional) Proxy settings of the run. If you have access to Apify proxy, leave the default settings. If not, you can set `{ "useApifyProxy": false" }` to disable proxy usage |
 
 **Notes on the input**
 - Each category has a few special sub-category (not containing any products) which will not be crawled and scraped. If this kind of URLs are included in the `startUrls`, the actor prints a warning on start up.
-- When `maxItems` is set, the total results may be slightly greater. This is because the actor waits for pending requests to be complete and because each product on the website may produce more than one item (based on color variants).
+- When `maxItems` is set, the total results may be slightly greater. This is because the actor waits for pending requests to complete and because each product on the website may produce more than one item (based on color variants).
 
 INPUT Example:
 
