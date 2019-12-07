@@ -1,6 +1,6 @@
 ## Forever21 Scraper
 
-Forever21 Scraper is an [Apify actor](https://apify.com/actors) for extracting product data from the [forever21.com](https://www.forever21.com) on line fashion store. It allows you to scrape the whole site or specific categories and/or products. It is build on top of [Apify SDK](https://sdk.apify.com/) and you can run it both on [Apify platform](https://my.apify.com) and locally.
+Forever21 Scraper is an [Apify actor](https://apify.com/actors) for extracting product data from [forever21.com](https://www.forever21.com) on line fashion store. It allows you to scrape the whole site, specific categories and products. It is build on top of [Apify SDK](https://sdk.apify.com/) and you can run it both on [Apify platform](https://my.apify.com) and locally.
 
 - [Input](#input)
 - [Output](#output)
@@ -11,10 +11,14 @@ Forever21 Scraper is an [Apify actor](https://apify.com/actors) for extracting p
 
 | Field | Type | Description | Default value
 | ----- | ---- | ----------- | -------------|
-| startUrls | array | List of [Request](https://sdk.apify.com/docs/api/request#docsNav) objects that will be deeply crawled. The URL can be the home page `https://www.forever21.com`, categories URL or product page URL | `[{ "url": "https://www.forever21.com" }]`|
+| startUrls | array | List of [Request](https://sdk.apify.com/docs/api/request#docsNav) objects that will be deeply crawled. The URLs can be the home page `https://www.forever21.com` or the top-level categories, the sub-categories and product page URLs | `[{ "url": "https://www.forever21.com" }]`|
 | maxItems | number | Maximum number of product items to be scraped | all found |
 | extendOutputFunction | string | Function that takes a JQuery handle ($) as argument and returns data that will be merged with the default output. More information in [Extend output function](#extend-output-function) | |
 | proxyConfiguration | object | Proxy settings of the run. If you have access to Apify proxy, leave the default settings. If not, you can set `{ "useApifyProxy": false" }` to disable proxy usage | `{ "useApifyProxy": true }`|
+
+**Notes on the input**
+- Each category has a few special sub-category (not containing any products) which will not be crawled and scraped. If this kind of URLs are included in the `startUrls`, the actor prints a warning on start up.
+- When `maxItems` is set, the total results may be slightly greater. This is because the actor waits for pending requests to be complete and because each product on the website may produce more than one item (based on color variants).
 
 ### Output
 
@@ -84,10 +88,10 @@ The following example will change the `title` field, remove the `gender` field a
     return {
         title: 'This is a new title',
         gender: undefined,
-        myField: 1234
+        myNewField: 1234
     }
 }
 ```
 
 ### Open an issue
-If you find any bug, please create an issue on the [Github page](https://github.com/emastra/actor-forever21).
+If you find any bug, please create an issue on the actor [Github page](https://github.com/emastra/actor-forever21).
