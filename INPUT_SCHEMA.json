@@ -3,17 +3,17 @@
   "type": "object",
   "schemaVersion": 1,
   "properties": {
-    "startURLs": {
+    "startUrls": {
       "title": "Start URLs",
       "type": "array",
-      "editor": "requestListSources",
+      "editor": "stringList",
       "description": "List of URLs that will be scraped or crawled. It can be the main website URL, (sub-)category URLs or product URLs."
     },
     "maxItems": {
       "title": "Max items",
       "type": "integer",
       "minimum": 1,
-      "description": "Limit of product pages to be scraped"
+      "description": "Limit of product items to be scraped"
     },
     "extendOutputFunction": {
       "title": "Extend output function",
@@ -28,7 +28,8 @@
       "type": "object",
       "editor": "proxy",
       "description": "The best option is usually Automatic proxy, but you can also use your own proxies or no proxy. Proxy's country defaults to 'US'.",
-      "prefill": { "disableProxy": false }
+      "prefill": { "useApifyProxy": true }
     }
-  }
+  },
+  "required": ["startUrls"]
 }
