@@ -1,6 +1,6 @@
 ## Forever21 Scraper
 
-Forever21 Scraper is an [Apify actor](https://apify.com/actors) for extracting product data from [forever21.com](https://www.forever21.com) on line fashion store. It allows you to scrape the whole site, specific categories and products. It is build on top of [Apify SDK](https://sdk.apify.com/) and you can run it both on [Apify platform](https://my.apify.com) and locally.
+Forever21 Scraper is an [Apify actor](https://apify.com/actors) for extracting product data from [forever21.com](https://www.forever21.com) fashion on line store. It allows you to scrape the whole site, specific categories and products. It is build on top of [Apify SDK](https://sdk.apify.com/) and you can run it both on [Apify platform](https://my.apify.com) and locally.
 
 - [Input](#input)
 - [Output](#output)
@@ -11,7 +11,7 @@ Forever21 Scraper is an [Apify actor](https://apify.com/actors) for extracting p
 
 | Field | Type | Description |
 | ----- | ---- | ----------- |
-| startUrls | array | (required) List of [Request](https://sdk.apify.com/docs/api/request#docsNav) objects that will be deeply crawled. The URLs can be the home page `https://www.forever21.com` or the top-level categories, the sub-categories and product page URLs |
+| startUrls | array | (required) List of [Request](https://sdk.apify.com/docs/api/request#docsNav) objects that will be deeply crawled. The URLs can be the home page `https://www.forever21.com` or a combination of top-level categories, sub-categories and product page URLs |
 | maxItems | number | (optional) Maximum number of product items to be scraped |
 | extendOutputFunction | string | (optional) Function that takes a JQuery handle ($) as argument and returns data that will be merged with the default output. More information in [Extend output function](#extend-output-function) |
 | proxyConfiguration | object | (optional) Proxy settings of the run. If you have access to Apify proxy, leave the default settings. If not, you can set `{ "useApifyProxy": false" }` to disable proxy usage |
