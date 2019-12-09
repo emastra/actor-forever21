@@ -26,7 +26,6 @@ async function enqueueSubcategories($, requestQueue, cat = null) {
     });
 
     totalEnqueued += supportedHrefs.length;
-    // console.log('supportedHrefs', supportedHrefs);
 
     for (const href of supportedHrefs) {
       await requestQueue.addRequest({
@@ -101,14 +100,6 @@ async function extractProductPage($, request) {
   const gseo = cheerio.load(parsedData.GSEO);
   const variants = parsedData.Variants;
   const baseImageUrl = 'https://www.forever21.com/images/1_front_750/';
-  /*
-    parsedData
-    breadcrumbArray
-    parsedDesc
-    gseo
-    variants
-    baseImageUrl
-  */
 
   const items = [];
 

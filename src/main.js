@@ -19,7 +19,6 @@ const {
 
 const { BASE_URL } = require('./constants');
 
-////////////////////////////////////////////////////////////////////////////////
 
 Apify.main(async () => {
   const input = await Apify.getInput();
@@ -38,7 +37,6 @@ Apify.main(async () => {
   // initialize request list from url sources
   const sources = checkAndCreateUrlSource(startUrls);
   const requestList = await Apify.openRequestList('start-list', sources);
-  // await requestList.initialize();
 
   // open request queue
   const requestQueue = await Apify.openRequestQueue();
@@ -46,9 +44,7 @@ Apify.main(async () => {
   // open dataset
   const dataset = await Apify.openDataset();
 
-
-  //////////////////////////////////////////////////////////////////////////////
-
+  // crawler config
   const crawler = new Apify.CheerioCrawler({
     requestList,
     requestQueue,
@@ -56,9 +52,6 @@ Apify.main(async () => {
     handlePageTimeoutSecs: 240,
     requestTimeoutSecs: 120,
     proxyUrls,
-
-
-    ////////////////////////////////////////////////////////////////////////////
 
     handlePageFunction: async ({ request, body, $ }) => {
       // if exists, check items limit. If limit is reached crawler will exit.
@@ -73,7 +66,7 @@ Apify.main(async () => {
         const totalEnqueued = await enqueueSubcategories($, requestQueue);
 
         log.info(`Enqueued ${totalEnqueued} subcategories from the homepage.`);
-      } // fine HOMEPAGE
+      }
 
       if (label === 'MAINCAT') {
         const cat = request.url.replace(BASE_URL, '');
@@ -86,7 +79,6 @@ Apify.main(async () => {
         const { urls, totalPages } = await extractSubcatPage($);
 
         const isPageOne = !Boolean(request.url.split('#')[1]);
-        log.info('totalPages: ' + totalPages + '. isPageOne: ' + isPageOne, '. url: ' + request.url);
 
         if (isPageOne) {
           await enqueueNextPages(request, requestQueue, totalPages);
@@ -103,7 +95,7 @@ Apify.main(async () => {
         }
 
         log.info(`Added ${urls.length} products from ${request.url}`);
-      } // fine SUBCAT
+      }
 
       if (label === 'PRODUCT') {
         let items = await extractProductPage($, request);
@@ -118,7 +110,7 @@ Apify.main(async () => {
           log.info('Product pushed:', item.itemId, item.color);
         });
 
-      } // fine PRODUCT
+      }
     },
 
     handleFailedRequestFunction: async ({ request }) => {

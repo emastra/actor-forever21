@@ -9,7 +9,7 @@ function validateInput(input) {
   // validate function
   const validate = (inputKey, type = 'string') => {
     const value = input[inputKey];
-    // console.log('inside validate. value:', value);
+
     if (type === 'array') {
       if (!Array.isArray(value)) {
         throw new Error(`Value of ${inputKey} should be array`);
@@ -32,9 +32,6 @@ function validateInput(input) {
   validate('maxItems', 'number');
   validate('extendOutputFunction', 'string');
   validate('proxyConfiguration', 'object');
-
-  // set defaults ??
-  // if (!input.proxyConfiguration) input.proxyConfiguration = { country: 'US' };
 }
 
 function getProxyUrls(proxyConfiguration) {
@@ -64,21 +61,21 @@ function checkAndCreateUrlSource(startUrls) {
     if (url === 'https://www.forever21.com') {
       sources.push({ url, userData: { label: 'HOMEPAGE' } });
     }
+    // if top-level category
     else if (/-main|_main/.test(url)) {
-      // log.warning(`The following url has not been added to the queue: ${url}.\nPlease choose a url from the sub-menu of the category. For more information, have a look at the actor documentation under "INPUT guidelines".`);
       sources.push({ url, userData: { label: 'MAINCAT' } });
     }
-    // if it's a category page
+    // if sub-category page
     else if (url.includes('catalog/category/')) {
       sources.push({ url, userData: { label: 'SUBCAT' } });
     }
-    // if it's a product page
+    // if product page
     else if (/[0-9]{8,12}$/.test(url)) {
       sources.push({ url, userData: { label: 'PRODUCT' } });
     }
     else {
-      // manage error here
-      log.warning(`The following url has not been added to the queue: ${url}.\nIt may be due to incorrect format or unsupported url. For more information, have a look at the actor documentation under "INPUT guidelines".`);
+      // unsupported or bad formatted urls get here.
+      log.warning(`The following url has not been added to the queue: ${url}.\nIt may be due to unsupported or incorrect url. For more information, have a look at the actor documentation, "input" section.`);
     }
   }
 
@@ -93,8 +90,6 @@ async function maxItemsCheck(maxItems, dataset, requestQueue) {
     log.info('Crawler Finished.');
     process.exit();
   }
-
-  // return itemCount >= maxItems
 }
 
 function checkAndEval(extendOutputFunction) {
