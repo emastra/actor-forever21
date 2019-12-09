@@ -2,9 +2,9 @@ const Apify = require('apify');
 const { log } = Apify.utils;
 const cheerio = require('cheerio');
 
-async function enqueueSubcategories($, requestQueue, cat = null) {
-  const BASE_URL = 'https://www.forever21.com';
+const { BASE_URL } = require('./constants');
 
+async function enqueueSubcategories($, requestQueue, cat = null) {
   let menuCats = $('div.d_new_mega_menu').toArray();
   let totalEnqueued = 0;
 

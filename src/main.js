@@ -9,29 +9,22 @@ const {
 } = require('./extractors');
 
 const {
-  checkAndEval,
-  setUpProxy,
+  validateInput,
+  getProxyUrls,
   checkAndCreateUrlSource,
   maxItemsCheck,
+  checkAndEval,
   applyFunction
 } = require('./utils');
 
-// constants
-const BASE_URL = 'https://www.forever21.com';
-
+const { BASE_URL } = require('./constants');
 
 ////////////////////////////////////////////////////////////////////////////////
 
 Apify.main(async () => {
-  // manage input
-  const input = await Apify.getValue('INPUT');
-  if (!input) throw new Error('INPUT is missing.');
-  if (!input.startUrls) throw new Error('INPUT "startUrls" property is required');
-  // check if startUrls è lista di oggetti. { url: ''}
-  // defaults
-  if (!input.proxyConfiguration) input.proxyConfiguration = { country: 'US' };
+  const input = await Apify.getInput();
+  validateInput(input);
 
-  // extract input variables
   const {
     startUrls,
     maxItems = null,
@@ -39,22 +32,18 @@ Apify.main(async () => {
     proxyConfiguration
   } = input;
 
-  // check extended
-  let evaledExtendOutputFunction;
-  if (extendOutputFunction) {
-    evaledExtendOutputFunction = checkAndEval(extendOutputFunction);
-  }
+  // create proxy url(s) to be used in crawler configuration
+  const proxyUrls = getProxyUrls(proxyConfiguration);
 
-  // proxy management
-  const proxyUrls = setUpProxy(proxyConfiguration);
-
+  // initialize request list from url sources
   const sources = checkAndCreateUrlSource(startUrls);
+  const requestList = await Apify.openRequestList('start-list', sources);
+  // await requestList.initialize();
 
-  const requestList = new Apify.RequestList({ sources });
-  await requestList.initialize();
-
+  // open request queue
   const requestQueue = await Apify.openRequestQueue();
 
+  // open dataset
   const dataset = await Apify.openDataset();
 
 
@@ -105,10 +94,12 @@ Apify.main(async () => {
 
         // enqueue products of the current page
         for (const url of urls) {
-          await requestQueue.addRequest({
-            url,
-            userData: { label: 'PRODUCT'}
-          });
+          if (url) {
+            await requestQueue.addRequest({
+              url,
+              userData: { label: 'PRODUCT'}
+            });
+          }
         }
 
         log.info(`Added ${urls.length} products from ${request.url}`);
@@ -117,11 +108,12 @@ Apify.main(async () => {
       if (label === 'PRODUCT') {
         let items = await extractProductPage($, request);
 
-        if (evaledExtendOutputFunction) {
-          items = await applyFunction($, evaledExtendOutputFunction, items);
+        if (extendOutputFunction) {
+          const evaledFunc = checkAndEval(extendOutputFunction);
+          items = await applyFunction($, evaledFunc, items);
         }
 
-        await Apify.pushData(items);
+        await dataset.pushData(items);
         items.forEach((item) => {
           log.info('Product pushed:', item.itemId, item.color);
         });
@@ -130,7 +122,11 @@ Apify.main(async () => {
     },
 
     handleFailedRequestFunction: async ({ request }) => {
-      log.warning(`Request ${request.url} failed too many times.`);
+      log.warning(`Request ${request.url} failed too many times`);
+
+      await dataset.pushData({
+        '#debug': Apify.utils.createRequestDebugInfo(request)
+      });
     }
   });
 

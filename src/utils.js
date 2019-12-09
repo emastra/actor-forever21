@@ -1,41 +1,59 @@
 const Apify = require('apify');
 const { log } = Apify.utils;
 
-function checkAndEval(extendOutputFunction) {
-  let evaledExtendOutputFunction;
+const { PROXY_DEFAULT_COUNTRY } = require('./constants');
 
-  try {
-      evaledExtendOutputFunction = eval(extendOutputFunction);
-  } catch (e) {
-      throw new Error(`extendOutputFunction is not a valid JavaScript! Error: ${e}`);
+function validateInput(input) {
+  if (!input) throw new Error('INPUT is missing.');
+
+  // validate function
+  const validate = (inputKey, type = 'string') => {
+    const value = input[inputKey];
+    // console.log('inside validate. value:', value);
+    if (type === 'array') {
+      if (!Array.isArray(value)) {
+        throw new Error(`Value of ${inputKey} should be array`);
+      }
+    }
+    else if (value) {
+      if (typeof value !== type) {
+        throw new Error(`Value of ${inputKey} should be ${type}`);
+      }
+    }
+  };
+
+  // check required field
+  if (!input.startUrls && input.startUrls.length <= 0) {
+    throw new Error('INPUT "startUrls" property is required');
   }
 
-  if (typeof evaledExtendOutputFunction !== "function") {
-      throw new Error(`extendOutputFunction is not a function! Please fix it or use just default output!`);
-  }
+  // check correct types
+  validate('startUrls', 'array');
+  validate('maxItems', 'number');
+  validate('extendOutputFunction', 'string');
+  validate('proxyConfiguration', 'object');
 
-  return evaledExtendOutputFunction;
+  // set defaults ??
+  // if (!input.proxyConfiguration) input.proxyConfiguration = { country: 'US' };
 }
 
-function setUpProxy(proxyConfiguration) {
-  const { customProxyUrls } = proxyConfiguration;
+function getProxyUrls(proxyConfiguration) {
+  const { useApifyProxy, proxyUrls = [], apifyProxyGroups } = proxyConfiguration;
 
-  if (!customProxyUrls) {
-    let username = '';
+  // if no custom proxy is provided, set proxyUrls
+  if (proxyUrls.length === 0) {
+    if (!useApifyProxy) return undefined;
 
-    if (proxyConfiguration.groups) username += `groups-${proxyConfiguration.groups},`;
-    username += `country-${proxyConfiguration.country}`;
+    const proxyUrl = Apify.getApifyProxyUrl({
+      password: process.env.APIFY_PROXY_PASSWORD,
+      groups: apifyProxyGroups,
+      country: PROXY_DEFAULT_COUNTRY
+    });
 
-    const password = process.env.APIFY_PROXY_PASSWORD;
-
-    const proxyUrl = `http://${username}:${password}@proxy.apify.com:8000`;
-    log.info(`Proxy url has been setup: http://${username}:*****@proxy.apify.com:8000`);
-
-    return [ proxyUrl ];
+    proxyUrls.push(proxyUrl);
   }
-  else {
-    return customProxyUrls;
-  }
+
+  return proxyUrls;
 }
 
 function checkAndCreateUrlSource(startUrls) {
@@ -79,18 +97,34 @@ async function maxItemsCheck(maxItems, dataset, requestQueue) {
   // return itemCount >= maxItems
 }
 
-async function applyFunction($, evaledExtendOutputFunction, items) {
+function checkAndEval(extendOutputFunction) {
+  let evaledFunc;
+
+  try {
+      evaledFunc = eval(extendOutputFunction);
+  } catch (e) {
+      throw new Error(`extendOutputFunction is not a valid JavaScript! Error: ${e}`);
+  }
+
+  if (typeof evaledFunc !== "function") {
+      throw new Error(`extendOutputFunction is not a function! Please fix it or use just default output!`);
+  }
+
+  return evaledFunc;
+}
+
+async function applyFunction($, evaledFunc, items) {
   const isObject = (val) => typeof val === 'object' && val !== null && !Array.isArray(val);
 
   let userResult = {};
   try {
-    userResult = await evaledExtendOutputFunction($);
+    userResult = await evaledFunc($);
   } catch (err) {
-    console.log(`extendOutputFunction crashed! Pushing default output. Please fix your function if you want to update the output. Error: ${e}`);
+    log.error(`extendOutputFunction crashed! Pushing default output. Please fix your function if you want to update the output. Error: ${err}`);
   }
 
   if (!isObject(userResult)) {
-    console.log('extendOutputFunction must return an object!!!');
+    log.exception(new Error('extendOutputFunction must return an object!'));
     process.exit(1);
   }
 
@@ -102,9 +136,10 @@ async function applyFunction($, evaledExtendOutputFunction, items) {
 }
 
 module.exports = {
-  checkAndEval,
-  setUpProxy,
+  validateInput,
+  getProxyUrls,
   checkAndCreateUrlSource,
   maxItemsCheck,
-  applyFunction,
+  checkAndEval,
+  applyFunction
 }
