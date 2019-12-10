@@ -78,7 +78,7 @@ Apify.main(async () => {
       if (label === 'SUBCAT') {
         const { urls, totalPages } = await extractSubcatPage($);
 
-        const isPageOne = !Boolean(request.url.split('#')[1]);
+        const isPageOne = !(request.url.split('#')[1]);
 
         if (isPageOne) {
           await enqueueNextPages(request, requestQueue, totalPages);

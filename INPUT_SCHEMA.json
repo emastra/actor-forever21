@@ -12,7 +12,9 @@
     "maxItems": {
       "title": "Max items",
       "type": "integer",
-      "description": "Limit of product items to be scraped. Zero value means no limit."
+      "minimum": 0,
+      "description": "Limit of product items to be scraped. Zero value means no limit.",
+      "prefill": 0
     },
     "extendOutputFunction": {
       "title": "Extend output function",
