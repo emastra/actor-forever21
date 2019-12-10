@@ -18,7 +18,7 @@ async function enqueueSubcategories($, requestQueue, cat = null) {
     const hrefs = $(menuDiv).find('a').toArray().map(a => a.attribs.href);
 
     // filter out unsupported categories
-    const supportedHrefs = hrefs.filter(href => {
+    const supportedHrefs = hrefs.filter((href) => {
       if (/-main|_main/.test(href)) return false;
       if (!href.includes('catalog/category/')) return false;
 
@@ -30,7 +30,7 @@ async function enqueueSubcategories($, requestQueue, cat = null) {
     for (const href of supportedHrefs) {
       await requestQueue.addRequest({
         url: BASE_URL + href,
-        userData: { label: 'SUBCAT'}
+        userData: { label: 'SUBCAT' }
       });
     }
 
@@ -56,9 +56,9 @@ async function extractSubcatPage($) {
   const totalRecords = cData.TotalRecords;
   if (!catalogProducts || !totalRecords) {
     // console.log(cData);
-    throw new Error('Missing critical data source');
+    throw new Error('Web page missing critical data source');
   }
-  log.info('length of catalogProducts: ' + catalogProducts.length + '. TotalRecords: ' + totalRecords);
+  // log.info('length of catalogProducts: ' + catalogProducts.length + '. TotalRecords: ' + totalRecords);
 
   const urls = catalogProducts.map(item => item.ProductShareLinkUrl.toLowerCase());
   const totalPages = Math.ceil(totalRecords / 120);
@@ -84,7 +84,7 @@ async function enqueueNextPages(request, requestQueue, totalPages) {
 
 async function extractProductPage($, request) {
   const scriptContent = $('script:contains("var pData")').html();
-  if (!scriptContent) throw new Error('Missing critical data source');
+  if (!scriptContent) throw new Error('Web page missing critical data source');
 
   const start = scriptContent.indexOf('var pData = ') + 12;
   const end = scriptContent.length;
