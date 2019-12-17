@@ -14,5 +14,5 @@
 		"test": "echo \"Error: oops, the actor has no tests yet, sad!\" && exit 1"
 	},
 	"author": "emastra",
-	"license": "ISC"
+	"license": "Apache"
 }

@@ -56,10 +56,14 @@ function getProxyUrls(proxyConfiguration) {
 function checkAndCreateUrlSource(startUrls) {
   const sources = [];
 
-  for (const url of startUrls) {
+  for (const { url } of startUrls) {
     // if url is the homepage
     if (url === 'https://www.forever21.com') {
       sources.push({ url, userData: { label: 'HOMEPAGE' } });
+    }
+    // if product page
+    else if (/[0-9]{8,12}$/.test(url)) {
+      sources.push({ url, userData: { label: 'PRODUCT' } });
     }
     // if top-level category
     else if (/-main|_main/.test(url)) {
@@ -68,10 +72,6 @@ function checkAndCreateUrlSource(startUrls) {
     // if sub-category page
     else if (url.includes('catalog/category/')) {
       sources.push({ url, userData: { label: 'SUBCAT' } });
-    }
-    // if product page
-    else if (/[0-9]{8,12}$/.test(url)) {
-      sources.push({ url, userData: { label: 'PRODUCT' } });
     }
     else {
       // unsupported or bad formatted urls get here.
@@ -82,9 +82,7 @@ function checkAndCreateUrlSource(startUrls) {
   return sources;
 }
 
-async function maxItemsCheck(maxItems, dataset, requestQueue) {
-  const { itemCount } = await dataset.getInfo();
-
+function maxItemsCheck(maxItems, itemCount, requestQueue) {
   if (itemCount >= maxItems) {
     log.info(`Actor reached the max items limit. Crawler is going to halt...`);
     log.info('Crawler Finished.');

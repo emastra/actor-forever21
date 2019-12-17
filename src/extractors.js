@@ -113,7 +113,7 @@ async function extractProductPage($, request) {
     item.scrapedAt = new Date().toISOString();
     item.brand = parsedData.Brand;
     item.title = parsedData.DisplayName;
-    item.categories = breadcrumbArray.map(item => item.item.name.toLowerCase());
+    item.categories = breadcrumbArray.map(it => it.item.name.toLowerCase()).filter(it => it != item.title.toLowerCase());
     item.description = parsedDesc.text().replace(/^Details/, '');
     const descChip = item.description.substring(item.description.indexOf('Content + Care-')).replace('Content + Care- ', '');
     item.composition = descChip.substring(0, descChip.indexOf('-'));
@@ -125,7 +125,7 @@ async function extractProductPage($, request) {
     item.color = variants[i].ColorName.toLowerCase();
     item.sizes = variants[i].Sizes.map(obj => obj.SizeName);
     item.availableSizes = variants[i].Sizes.filter(obj => obj.Available).map(obj => obj.SizeName);
-    item.images = [{ src: `${baseImageUrl}${parsedData.ItemCode}-${variants[i].ColorId}.jpg` }];
+    item.images = JSON.parse(gseo('script')[0].children[0].data).image.map(url => { return { url } });
 
     items.push(item);
   }

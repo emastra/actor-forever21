@@ -6,8 +6,9 @@
     "startUrls": {
       "title": "Start Urls",
       "type": "array",
-      "editor": "stringList",
-      "description": "List of URLs that will be scraped or crawled. It can be the main website URL, category and sub-category URLs or product URLs."
+      "editor": "requestListSources",
+      "description": "List of URLs that will be scraped or crawled. It can be the main website URL, category and sub-category URLs or product URLs.",
+      "prefill": [{ "url": "https://www.forever21.com" }]
     },
     "maxItems": {
       "title": "Max items",

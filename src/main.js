@@ -41,8 +41,13 @@ Apify.main(async () => {
   // open request queue
   const requestQueue = await Apify.openRequestQueue();
 
-  // open dataset
+  // open dataset and get itemCount
   const dataset = await Apify.openDataset();
+  let { itemCount } = await dataset.getInfo();
+
+  // if exists, evaluate extendOutputFunction
+  let evaledFunc;
+  if (extendOutputFunction) evaledFunc = checkAndEval(extendOutputFunction);
 
   // crawler config
   const crawler = new Apify.CheerioCrawler({
@@ -55,7 +60,7 @@ Apify.main(async () => {
 
     handlePageFunction: async ({ request, body, $ }) => {
       // if exists, check items limit. If limit is reached crawler will exit.
-      if (maxItems) await maxItemsCheck(maxItems, dataset, requestQueue);
+      if (maxItems) maxItemsCheck(maxItems, itemCount, requestQueue);
 
       log.info('Processing:', request.url);
       const { label } = request.userData;
@@ -100,13 +105,13 @@ Apify.main(async () => {
       if (label === 'PRODUCT') {
         let items = await extractProductPage($, request);
 
-        if (extendOutputFunction) {
-          const evaledFunc = checkAndEval(extendOutputFunction);
-          items = await applyFunction($, evaledFunc, items);
-        }
+        if (extendOutputFunction) items = await applyFunction($, evaledFunc, items);
 
         await dataset.pushData(items);
         items.forEach((item) => {
+          // increase itemCount for each pushed item
+          itemCount++;
+
           log.info('Product pushed:', item.itemId, item.color);
         });
 
