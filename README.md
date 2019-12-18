@@ -33,7 +33,7 @@ INPUT Example:
   "maxItems": 1000,
   "extendOutputFunction": "($) => { return { test: 1234, test2: 5678 } }",
   "proxyConfiguration": {
-    "country": "US"
+    "useApifyProxy": true
   }
 }
 ```
@@ -42,28 +42,27 @@ INPUT Example:
 
 Output is stored in a dataset. Each item is information about one product. A single product on the website produces an item for each color variant.
 
-Example of one output item:
+Example of one item output:
 
 ```
 {
   "source": "forever21",
-  "itemId": "2000391313",
-  "url": "https://www.forever21.com/us/shop/catalog/product/f21/activewear/2000391313",
-  "scrapedAt": "2019-12-06T10:45:47.542Z",
+  "itemId": "2000393583",
+  "url": "https://www.forever21.com/us/shop/catalog/product/f21/sweater/2000393583",
+  "scrapedAt": "2019-12-18T11:00:15.171Z",
   "brand": "F21",
-  "title": "High Impact - Patternblock Sports Bra",
+  "title": "Ribbed Twist-Hem Sweater",
   "categories": [
     "women + acc",
-    "activewear",
-    "high impact - patternblock sports bra"
+    "tops"
   ],
-  "description": "A knit high-impact sports bra featuring a patternblock design, scoop neck, racerback, removable cups, and an elasticized waist.- Matching bottoms available.Content + Care- 50% nylon, 43% polyester, 7% spandex- Machine wash coldSize + Fit- Model is 5'10\" and wearing a Small",
-  "composition": "50% nylon, 43% polyester, 7% spandex",
-  "price": 14.99,
-  "salePrice": 14.99,
+  "description": "A ribbed knit sweater featuring a V-neckline, long sleeves, and a twisted hem.- This is an independent brand and not a Forever 21 branded item.Content + Care- 100% acrylic- Hand wash coldSize + Fit- Model is 5'9\" and wearing a Small",
+  "composition": "100% acrylic",
+  "price": 32,
+  "salePrice": 32,
   "currency": "USD",
   "gender": "female",
-  "color": "black/mauve",
+  "color": "mauve",
   "sizes": [
     "Small",
     "Medium",
@@ -76,7 +75,16 @@ Example of one output item:
   ],
   "images": [
     {
-      "src": "https://www.forever21.com/images/1_front_750/00391313-01.jpg"
+      "url": "https://www.forever21.com/images/1_front_750/00393583-01.jpg"
+    },
+    {
+      "url": "https://www.forever21.com/images/2_side_750/00393583-01.jpg"
+    },
+    {
+      "url": "https://www.forever21.com/images/3_back_750/00393583-01.jpg"
+    },
+    {
+      "url": "https://www.forever21.com/images/4_full_750/00393583-01.jpg"
     }
   ]
 }
