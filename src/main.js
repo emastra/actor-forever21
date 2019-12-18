@@ -1,134 +1,134 @@
 const Apify = require('apify');
+
 const { log } = Apify.utils;
 
 const {
-  enqueueSubcategories,
-  extractSubcatPage,
-  enqueueNextPages,
-  extractProductPage
+    enqueueSubcategories,
+    extractSubcatPage,
+    enqueueNextPages,
+    extractProductPage,
 } = require('./extractors');
 
 const {
-  validateInput,
-  getProxyUrls,
-  checkAndCreateUrlSource,
-  maxItemsCheck,
-  checkAndEval,
-  applyFunction
+    validateInput,
+    getProxyUrls,
+    checkAndCreateUrlSource,
+    maxItemsCheck,
+    checkAndEval,
+    applyFunction,
 } = require('./utils');
 
 const { BASE_URL } = require('./constants');
 
 
 Apify.main(async () => {
-  const input = await Apify.getInput();
-  validateInput(input);
+    const input = await Apify.getInput();
+    validateInput(input);
 
-  const {
-    startUrls,
-    maxItems = null,
-    extendOutputFunction = null,
-    proxyConfiguration
-  } = input;
+    const {
+        startUrls,
+        maxItems = null,
+        extendOutputFunction = null,
+        proxyConfiguration,
+    } = input;
 
-  // create proxy url(s) to be used in crawler configuration
-  const proxyUrls = getProxyUrls(proxyConfiguration);
+    // create proxy url(s) to be used in crawler configuration
+    const proxyUrls = getProxyUrls(proxyConfiguration);
 
-  // initialize request list from url sources
-  const sources = checkAndCreateUrlSource(startUrls);
-  const requestList = await Apify.openRequestList('start-list', sources);
+    // initialize request list from url sources
+    const sources = checkAndCreateUrlSource(startUrls);
+    const requestList = await Apify.openRequestList('start-list', sources);
 
-  // open request queue
-  const requestQueue = await Apify.openRequestQueue();
+    // open request queue
+    const requestQueue = await Apify.openRequestQueue();
 
-  // open dataset and get itemCount
-  const dataset = await Apify.openDataset();
-  let { itemCount } = await dataset.getInfo();
+    // open dataset and get itemCount
+    const dataset = await Apify.openDataset();
+    let { itemCount } = await dataset.getInfo();
 
-  // if exists, evaluate extendOutputFunction
-  let evaledFunc;
-  if (extendOutputFunction) evaledFunc = checkAndEval(extendOutputFunction);
+    // if exists, evaluate extendOutputFunction
+    let evaledFunc;
+    if (extendOutputFunction) evaledFunc = checkAndEval(extendOutputFunction);
 
-  // crawler config
-  const crawler = new Apify.CheerioCrawler({
-    requestList,
-    requestQueue,
-    maxRequestRetries: 3,
-    handlePageTimeoutSecs: 240,
-    requestTimeoutSecs: 120,
-    proxyUrls,
+    // crawler config
+    const crawler = new Apify.CheerioCrawler({
+        requestList,
+        requestQueue,
+        maxRequestRetries: 3,
+        handlePageTimeoutSecs: 240,
+        requestTimeoutSecs: 120,
+        proxyUrls,
 
-    handlePageFunction: async ({ request, body, $ }) => {
-      // if exists, check items limit. If limit is reached crawler will exit.
-      if (maxItems) maxItemsCheck(maxItems, itemCount, requestQueue);
+        handlePageFunction: async ({ request, body, $ }) => {
+            // if exists, check items limit. If limit is reached crawler will exit.
+            if (maxItems) maxItemsCheck(maxItems, itemCount);
 
-      log.info('Processing:', request.url);
-      const { label } = request.userData;
+            log.info('Processing:', request.url);
+            const { label } = request.userData;
 
-      //
+            //
 
-      if (label === 'HOMEPAGE') {
-        const totalEnqueued = await enqueueSubcategories($, requestQueue);
+            if (label === 'HOMEPAGE') {
+                const totalEnqueued = await enqueueSubcategories($, requestQueue);
 
-        log.info(`Enqueued ${totalEnqueued} subcategories from the homepage.`);
-      }
+                log.info(`Enqueued ${totalEnqueued} subcategories from the homepage.`);
+            }
 
-      if (label === 'MAINCAT') {
-        const cat = request.url.replace(BASE_URL, '');
-        const totalEnqueued = await enqueueSubcategories($, requestQueue, cat);
+            if (label === 'MAINCAT') {
+                const cat = request.url.replace(BASE_URL, '');
+                const totalEnqueued = await enqueueSubcategories($, requestQueue, cat);
 
-        log.info(`Enqueued ${totalEnqueued} subcategories from ${request.url}`);
-      }
+                log.info(`Enqueued ${totalEnqueued} subcategories from ${request.url}`);
+            }
 
-      if (label === 'SUBCAT') {
-        const { urls, totalPages } = await extractSubcatPage($);
+            if (label === 'SUBCAT') {
+                const { urls, totalPages } = await extractSubcatPage($);
 
-        const isPageOne = !(request.url.split('#')[1]);
+                const isPageOne = !(request.url.split('#')[1]);
 
-        if (isPageOne) {
-          await enqueueNextPages(request, requestQueue, totalPages);
-        }
+                if (isPageOne) {
+                    await enqueueNextPages(request, requestQueue, totalPages);
+                }
 
-        // enqueue products of the current page
-        for (const url of urls) {
-          if (url) {
-            await requestQueue.addRequest({
-              url,
-              userData: { label: 'PRODUCT'}
+                // enqueue products of the current page
+                for (const url of urls) {
+                    if (url) {
+                        await requestQueue.addRequest({
+                            url,
+                            userData: { label: 'PRODUCT' },
+                        });
+                    }
+                }
+
+                log.info(`Added ${urls.length} products from ${request.url}`);
+            }
+
+            if (label === 'PRODUCT') {
+                let items = await extractProductPage($, request);
+
+                if (extendOutputFunction) items = await applyFunction($, evaledFunc, items);
+
+                await dataset.pushData(items);
+                items.forEach((item) => {
+                    // increase itemCount for each pushed item
+                    itemCount++;
+
+                    log.info('Product pushed:', item.itemId, item.color);
+                });
+            }
+        },
+
+        handleFailedRequestFunction: async ({ request }) => {
+            log.warning(`Request ${request.url} failed too many times`);
+
+            await dataset.pushData({
+                '#debug': Apify.utils.createRequestDebugInfo(request),
             });
-          }
-        }
+        },
+    });
 
-        log.info(`Added ${urls.length} products from ${request.url}`);
-      }
+    log.info('Starting crawler.');
+    await crawler.run();
 
-      if (label === 'PRODUCT') {
-        let items = await extractProductPage($, request);
-
-        if (extendOutputFunction) items = await applyFunction($, evaledFunc, items);
-
-        await dataset.pushData(items);
-        items.forEach((item) => {
-          // increase itemCount for each pushed item
-          itemCount++;
-
-          log.info('Product pushed:', item.itemId, item.color);
-        });
-
-      }
-    },
-
-    handleFailedRequestFunction: async ({ request }) => {
-      log.warning(`Request ${request.url} failed too many times`);
-
-      await dataset.pushData({
-        '#debug': Apify.utils.createRequestDebugInfo(request)
-      });
-    }
-  });
-
-  log.info('Starting crawler.');
-  await crawler.run();
-
-  log.info('Crawler Finished.');
+    log.info('Crawler Finished.');
 });
