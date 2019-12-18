@@ -98,6 +98,9 @@ async function extractProductPage($, request) {
     const parsedDesc = cheerio.load(parsedData.Description);
     const gseo = cheerio.load(parsedData.GSEO);
     const variants = parsedData.Variants;
+    const imageBaseUrls = JSON.parse(gseo('script')[0].children[0].data).image.map(url =>
+        url.replace('https://', '').split('/').slice(0, -1).join('/')
+    );
 
     const items = [];
 
@@ -123,7 +126,9 @@ async function extractProductPage($, request) {
         item.color = variants[i].ColorName.toLowerCase();
         item.sizes = variants[i].Sizes.map(obj => obj.SizeName);
         item.availableSizes = variants[i].Sizes.filter(obj => obj.Available).map(obj => obj.SizeName);
-        item.images = JSON.parse(gseo('script')[0].children[0].data).image.map((url) => { return { url }; });
+        item.images = imageBaseUrls.map(baseurl => {
+            return { url: `https://${baseurl}/${parsedData.ItemCode}-${variants[i].ColorId}.jpg` };
+        });
 
         items.push(item);
     }
